@@ -1,4 +1,4 @@
 # ChatRoomProject
 Project with Nick 
 
-Written in JS, Html, CSS for a real time chat room application that contains other features; starting with an announcements section. 
+Written using JS, Html, CSS and possibly React and Node.JS A real time chat room application that contains other features; starting with an announcements section. 
