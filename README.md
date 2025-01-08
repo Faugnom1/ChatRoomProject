@@ -5,4 +5,10 @@ Written using JS, Html, CSS and possibly React and Node.JS A real time chat room
 
 
 To Do:
+Allow for Usernames
+Add Moderators
+Stylize 
+Persistance : Store Messages in a Database
+Multiple Rooms
+Word Filters 
 
