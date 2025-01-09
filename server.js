@@ -7,12 +7,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-let users = []; // Temporary user storage (replace with a database later)
+let users = []; // Temporary user storage (replace with a database later mr fanugo )
 
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
-// Sign-up endpoint
+// Sign-up end pointy
 app.post('/signup', (req, res) => {
     const { username, password } = req.body;
     if (users.find(user => user.username === username)) {
@@ -22,7 +22,7 @@ app.post('/signup', (req, res) => {
     res.send({ message: 'Sign-up successful' });
 });
 
-// Login endpoint
+// login stuff
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     const user = users.find(user => user.username === username && user.password === password);
@@ -32,7 +32,7 @@ app.post('/login', (req, res) => {
     res.status(400).send({ message: 'Invalid credentials' });
 });
 
-// Handle chat messages
+// handle chat messagessssssss
 io.on('connection', (socket) => {
     console.log('A user connected');
     socket.on('chat message', (msg) => {
