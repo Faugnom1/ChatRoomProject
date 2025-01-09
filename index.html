@@ -1,35 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Chat Room</title>
-    <link rel="stylesheet" href="index.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room with Login</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <ul id="messages"></ul>
-    <form id="form">
-        <input id="input" autocomplete="off" /><button>Send</button>
-    </form>
-    <script src="/socket.io/socket.io.js"></script>
+    <div class="container">
+        <h1 id="title">Login</h1>
+        <form id="auth-form">
+            <div class="form-control">
+                <input type="text" id="username" placeholder="Username" required />
+            </div>
+            <div class="form-control">
+                <input type="password" id="password" placeholder="Password" required />
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <p><span id="toggle">Sign Up</span></p>
+    </div>
+
     <script>
-        const socket = io();
+        let isLogin = true;
 
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
-        const messages = document.getElementById('messages');
-
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (input.value) {
-                socket.emit('chat message', input.value);
-                input.value = '';
-            }
+        document.getElementById('toggle').addEventListener('click', () => {
+            isLogin = !isLogin;
+            document.getElementById('title').innerText = isLogin ? 'Login' : 'Sign Up';
+            document.getElementById('toggle').innerText = isLogin ? 'Sign Up' : 'Login';
         });
 
-        socket.on('chat message', (msg) => {
-            const item = document.createElement('li');
-            item.textContent = msg;
-            messages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+        const form = document.getElementById('auth-form');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const endpoint = isLogin ? '/login' : '/signup';
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    if (isLogin) {
+                        // Redirect to chatroom page after successful login
+                        window.location.href = 'chatroom.html';
+                    }
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred. Check the server.');
+            }
         });
     </script>
 </body>
