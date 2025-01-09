@@ -1,27 +1,49 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+const express = require('express');
+const bodyParser = require('body-parser');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
+let users = []; // Temporary user storage (replace with a database later)
+
+app.use(bodyParser.json());
+app.use(express.static(__dirname));
+
+// Sign-up endpoint
+app.post('/signup', (req, res) => {
+    const { username, password } = req.body;
+    if (users.find(user => user.username === username)) {
+        return res.status(400).send({ message: 'User already exists' });
+    }
+    users.push({ username, password });
+    res.send({ message: 'Sign-up successful' });
 });
 
-io.on("connection", (socket) => {
-    console.log("A user connected");
+// Login endpoint
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find(user => user.username === username && user.password === password);
+    if (user) {
+        return res.send({ message: 'Login successful' });
+    }
+    res.status(400).send({ message: 'Invalid credentials' });
+});
 
-    socket.on("chat message", (msg) => {
-        io.emit("chat message", msg);
+// Handle chat messages
+io.on('connection', (socket) => {
+    console.log('A user connected');
+    socket.on('chat message', (msg) => {
+        io.emit('chat message', msg);
     });
-
-    socket.on("disconnect", () => {
-        console.log("A user disconnected");
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
     });
 });
 
-server.listen(3000, () => {
-    console.log("Listening on http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
 });
