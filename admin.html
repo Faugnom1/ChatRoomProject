@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <p id="online-count">Users Online: 0</p>
+    <label for="user-select">Select User:</label>
+    <select id="user-select"></select>
+    <button id="kick-user">Kick</button>
+    <button id="ban-user">Ban</button>
+    <button id="announce">Make Announcement</button>
+    <textarea id="announcement-text" placeholder="Type your announcement here"></textarea>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const userSelect = document.getElementById('user-select');
+        const onlineCount = document.getElementById('online-count');
+        const kickUserButton = document.getElementById('kick-user');
+        const banUserButton = document.getElementById('ban-user');
+        const announceButton = document.getElementById('announce');
+        const announcementText = document.getElementById('announcement-text');
+
+        // Update the user list and online count
+        socket.on('update users', (users) => {
+            onlineCount.textContent = `Users Online: ${users.length}`;
+            userSelect.innerHTML = '';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user;
+                option.textContent = user;
+                userSelect.appendChild(option);
+            });
+        });
+
+        // Kick user
+        kickUserButton.addEventListener('click', () => {
+            const targetUser = userSelect.value;
+            if (targetUser) {
+                socket.emit('kick', { username: targetUser });
+            }
+        });
+
+        // Ban user
+        banUserButton.addEventListener('click', () => {
+            const targetUser = userSelect.value;
+            if (targetUser) {
+                const message = prompt('Enter ban message:', 'You have been banned.');
+                socket.emit('ban', { username: targetUser, message });
+            }
+        });
+
+        // Make announcement
+        announceButton.addEventListener('click', () => {
+            const announcement = announcementText.value;
+            if (announcement) {
+                socket.emit('announcement', { username: 'Admin', message: announcement });
+                announcementText.value = ''; // Clear the text area
+            }
+        });
+    </script>
+</body>
+</html>
