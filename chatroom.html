@@ -5,145 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Room</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(to bottom, #1e90ff, #87cefa);
-        }
-
-        #chat-box {
-            position: absolute;
-            width: 400px;
-            max-width: 90%;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        #chat-header {
-            background: #007bff;
-            color: white;
-            padding: 10px;
-            cursor: move;
-            text-align: center;
-            font-weight: bold;
-            position: relative;
-        }
-
-        #role-display {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            font-size: 12px;
-            color: white;
-        }
-
-        #messages {
-            list-style: none;
-            padding: 10px;
-            margin: 0;
-            height: 300px;
-            overflow-y: auto;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-        }
-
-        #form {
-            display: flex;
-            padding: 10px;
-            background: #f9f9f9;
-        }
-
-        #input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        #send-button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-left: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #send-button:hover {
-            background: #0056b3;
-        }
-
-        #settings-panel {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        #home-button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #home-button:hover {
-            background: #0056b3;
-        }
-
-        #background-slider {
-            width: 100%;
-            margin: 10px 0;
-        }
-
-        #admin-menu {
-            position: absolute;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: none;
-            z-index: 1000;
-        }
-
-        #admin-menu button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            border: none;
-            background: white;
-            text-align: left;
-            cursor: pointer;
-        }
-
-        #admin-menu button:hover {
-            background: #f0f0f0;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+    <div id="particles-js"></div>
     <div id="chat-box">
         <div id="chat-header">
+            <button id="back-arrow">⬅</button>
             Chat Room
+            <button id="forward-arrow">➡</button>
             <span id="role-display"></span>
         </div>
         <ul id="messages"></ul>
@@ -157,6 +28,7 @@
         <h2>Settings</h2>
         <label for="background-slider">Background Color</label>
         <input type="range" id="background-slider" min="0" max="360">
+        <input type="text" id="admin-code" placeholder="Enter admin code" style="display: none;">
         <button id="home-button">Home</button>
     </div>
 
@@ -166,7 +38,6 @@
         <button id="ban-user">Ban User</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const messages = document.getElementById('messages');
@@ -177,20 +48,43 @@
         const roleDisplay = document.getElementById('role-display');
         const settingsPanel = document.getElementById('settings-panel');
         const backgroundSlider = document.getElementById('background-slider');
+        const adminCodeInput = document.getElementById('admin-code');
         const homeButton = document.getElementById('home-button');
         const adminMenu = document.getElementById('admin-menu');
         const purgeChatButton = document.getElementById('purge-chat');
         const kickUserButton = document.getElementById('kick-user');
         const banUserButton = document.getElementById('ban-user');
+        const backArrow = document.getElementById('back-arrow');
+        const forwardArrow = document.getElementById('forward-arrow');
 
         let username = prompt('Enter your username:');
         let role = 'Student';
-
-        if (username === 'Nicholasiscool123!') {
-            role = 'Admin';
-        }
+        let sliderMoves = 0;
+        let lastSliderValue = backgroundSlider.value;
 
         roleDisplay.textContent = `Role: ${role}`;
+
+        adminCodeInput.addEventListener('input', (e) => {
+            if (e.target.value === 'nickiscool123') {
+                role = 'Admin';
+                roleDisplay.textContent = `Role: ${role}`;
+                alert('You are now an admin!');
+            }
+        });
+
+        backgroundSlider.addEventListener('input', (e) => {
+            const hue = e.target.value;
+            document.body.style.background = `hsl(${hue}, 100%, 50%)`;
+
+            if (Math.abs(hue - lastSliderValue) > 20) {
+                sliderMoves++;
+            }
+            lastSliderValue = hue;
+
+            if (sliderMoves >= 10) {
+                adminCodeInput.style.display = 'block';
+            }
+        });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -234,9 +128,9 @@
 
             banUserButton.onclick = () => {
                 if (targetUsername === username) {
-                    alert("You can't ban yourself!");
+                    alert("You sped, why you trying to ban urself?");
                 } else {
-                    const reason = prompt('Enter ban reason:');
+                    const reason = prompt('what do you want this kid to see when they get back on:');
                     socket.emit('ban user', { username: targetUsername, reason });
                 }
                 adminMenu.style.display = 'none';
@@ -252,12 +146,12 @@
         });
 
         socket.on('kicked', () => {
-            alert('You have been kicked.');
+            alert('You have been kicked XDXDXDXDXDXDXDX imagine getting kicked.');
             window.location.reload();
         });
 
         socket.on('banned', (data) => {
-            alert(`You have been banned. Reason: ${data.reason}`);
+            alert(`You have been banned lolllll imagine getting banned in a chat!!!!!. Reason: ${data.reason}`);
             window.location.href = '/banned.html';
         });
 
@@ -283,18 +177,47 @@
             isDragging = false;
         });
 
-        // Settings functionality
-        chatHeader.addEventListener('dblclick', () => {
+        // Arrow navigation
+        backArrow.addEventListener('click', () => {
             settingsPanel.style.display = 'block';
+            chatBox.style.display = 'none';
         });
 
-        backgroundSlider.addEventListener('input', (e) => {
-            const hue = e.target.value;
-            document.body.style.background = `hsl(${hue}, 100%, 50%)`;
+        forwardArrow.addEventListener('click', () => {
+            settingsPanel.style.display = 'block';
+            chatBox.style.display = 'none';
         });
 
         homeButton.addEventListener('click', () => {
             settingsPanel.style.display = 'none';
+            chatBox.style.display = 'block';
+        });
+
+        // Initialize particles
+        tsParticles.load("particles-js", {
+            particles: {
+                number: {
+                    value: 50,
+                },
+                size: {
+                    value: 3,
+                },
+                move: {
+                    enable: true,
+                    speed: 2,
+                },
+                color: {
+                    value: "#ffffff",
+                },
+            },
+            interactivity: {
+                events: {
+                    onhover: {
+                        enable: true,
+                        mode: "repulse",
+                    },
+                },
+            },
         });
     </script>
 </body>
