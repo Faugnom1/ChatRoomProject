@@ -5,26 +5,197 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Room</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to bottom, #1e90ff, #87cefa);
+        }
+
+        #chat-box {
+            position: absolute;
+            width: 400px;
+            max-width: 90%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #chat-header {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            cursor: move;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+        }
+
+        #role-display {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 12px;
+            color: white;
+        }
+
+        #messages {
+            list-style: none;
+            padding: 10px;
+            margin: 0;
+            height: 300px;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #form {
+            display: flex;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+
+        #input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #send-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background: #0056b3;
+        }
+
+        #settings-panel {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        #home-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #home-button:hover {
+            background: #0056b3;
+        }
+
+        #background-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        #admin-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+        }
+
+        #admin-menu button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: white;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        #admin-menu button:hover {
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
-    <ul id="messages"></ul>
-    <form id="form">
-        <input id="input" autocomplete="off" placeholder="Type your message..." />
-        <button type="submit">Send</button>
-    </form>
+    <div id="chat-box">
+        <div id="chat-header">
+            Chat Room
+            <span id="role-display"></span>
+        </div>
+        <ul id="messages"></ul>
+        <form id="form">
+            <input id="input" autocomplete="off" placeholder="Type your message...">
+            <button type="submit" id="send-button">Send</button>
+        </form>
+    </div>
+
+    <div id="settings-panel">
+        <h2>Settings</h2>
+        <label for="background-slider">Background Color</label>
+        <input type="range" id="background-slider" min="0" max="360">
+        <button id="home-button">Home</button>
+    </div>
+
+    <div id="admin-menu">
+        <button id="purge-chat">Purge Chat</button>
+        <button id="kick-user">Kick User</button>
+        <button id="ban-user">Ban User</button>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
         const messages = document.getElementById('messages');
+        const input = document.getElementById('input');
+        const form = document.getElementById('form');
+        const chatBox = document.getElementById('chat-box');
+        const chatHeader = document.getElementById('chat-header');
+        const roleDisplay = document.getElementById('role-display');
+        const settingsPanel = document.getElementById('settings-panel');
+        const backgroundSlider = document.getElementById('background-slider');
+        const homeButton = document.getElementById('home-button');
+        const adminMenu = document.getElementById('admin-menu');
+        const purgeChatButton = document.getElementById('purge-chat');
+        const kickUserButton = document.getElementById('kick-user');
+        const banUserButton = document.getElementById('ban-user');
+
+        let username = prompt('Enter your username:');
+        let role = 'Student';
+
+        if (username === 'Nicholasiscool123!') {
+            role = 'Admin';
+        }
+
+        roleDisplay.textContent = `Role: ${role}`;
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (input.value) {
-                socket.emit('chat message', input.value);
+            if (input.value.trim()) {
+                socket.emit('chat message', `${username}: ${input.value}`);
                 input.value = '';
             }
         });
@@ -32,8 +203,98 @@
         socket.on('chat message', (msg) => {
             const item = document.createElement('li');
             item.textContent = msg;
+            item.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (role === 'Admin') {
+                    showAdminMenu(e.clientX, e.clientY, msg.split(':')[0]);
+                }
+            });
             messages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+        function showAdminMenu(x, y, targetUsername) {
+            adminMenu.style.display = 'block';
+            adminMenu.style.left = `${x}px`;
+            adminMenu.style.top = `${y}px`;
+
+            purgeChatButton.onclick = () => {
+                socket.emit('purge chat');
+                adminMenu.style.display = 'none';
+            };
+
+            kickUserButton.onclick = () => {
+                if (targetUsername === username) {
+                    alert("You can't kick yourself!");
+                } else {
+                    socket.emit('kick user', targetUsername);
+                }
+                adminMenu.style.display = 'none';
+            };
+
+            banUserButton.onclick = () => {
+                if (targetUsername === username) {
+                    alert("You can't ban yourself!");
+                } else {
+                    const reason = prompt('Enter ban reason:');
+                    socket.emit('ban user', { username: targetUsername, reason });
+                }
+                adminMenu.style.display = 'none';
+            };
+        }
+
+        document.addEventListener('click', () => {
+            adminMenu.style.display = 'none';
+        });
+
+        socket.on('purge chat', () => {
+            messages.innerHTML = '';
+        });
+
+        socket.on('kicked', () => {
+            alert('You have been kicked.');
+            window.location.reload();
+        });
+
+        socket.on('banned', (data) => {
+            alert(`You have been banned. Reason: ${data.reason}`);
+            window.location.href = '/banned.html';
+        });
+
+        // Drag functionality
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        chatHeader.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - chatBox.offsetLeft;
+            offsetY = e.clientY - chatBox.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                chatBox.style.left = `${e.clientX - offsetX}px`;
+                chatBox.style.top = `${e.clientY - offsetY}px`;
+                chatBox.style.position = 'absolute';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Settings functionality
+        chatHeader.addEventListener('dblclick', () => {
+            settingsPanel.style.display = 'block';
+        });
+
+        backgroundSlider.addEventListener('input', (e) => {
+            const hue = e.target.value;
+            document.body.style.background = `hsl(${hue}, 100%, 50%)`;
+        });
+
+        homeButton.addEventListener('click', () => {
+            settingsPanel.style.display = 'none';
         });
     </script>
 </body>
